@@ -3,6 +3,7 @@ import imutils
 import numpy as np
 import socket
 import time
+import os
 from transition import MovementDetector
 
 HOST = '127.0.0.1'
@@ -13,6 +14,9 @@ BUF_SIZE = 4096
 
 def getInt(bytes):
     return int.from_bytes(bytes, byteorder='little')
+
+os.system('touch screenshot.jpg')
+os.system('adb forward tcp:1313 localabstract:minicap')
 
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -47,6 +51,7 @@ is_blank = False
 time_lim = 0.5
 
 did_init_trans = False
+trans_init_ts = 0
 
 def handle_trans_fin():
     global is_moving, did_init_trans, last_mov_ts, start_ts, imgData
@@ -69,6 +74,7 @@ while True:
         if len(trans_init) > 0:
             print('triggered')
             did_init_trans = True
+            trans_init_ts = time.time()
             if is_moving:
                 time_lim = max(2, time_lim)
             elif time_lim == 2:
@@ -83,9 +89,15 @@ while True:
         data = s.recv(BUF_SIZE)
     except BlockingIOError:
         time.sleep(0.005)
-        time_delta = time.time() - last_mov_ts
+        current_time = time.time()
+        time_delta = current_time - last_mov_ts
         if time_delta > time_lim and is_moving:
             handle_trans_fin()
+        if did_init_trans:
+            trans_duration = current_time - trans_init_ts
+            if (trans_duration > 1.0 and not is_moving) or (trans_duration > 10.0 and is_moving):
+                print('abort', trans_duration)
+                handle_trans_fin()
 
 
     # append new data to the end of leftover old data
@@ -144,7 +156,8 @@ while True:
                     time_lim = 5 if is_blank else 0.5
 
                     if curr_is_moving:
-                        if current_time - last_mov_ts > time_lim and not is_moving:
+                        # current_time - last_mov_ts > time_lim and 
+                        if not is_moving:
                             print('start')
                             is_moving = True
                             start_ts = current_time
@@ -152,6 +165,11 @@ while True:
                     else:
                         if current_time - last_mov_ts > time_lim and is_moving:
                             handle_trans_fin()
+                        if did_init_trans:
+                            trans_duration = current_time - trans_init_ts
+                            if (trans_duration > 1.0 and not is_moving) or (trans_duration > 10.0 and is_moving):
+                                print('abort', trans_duration)
+                                handle_trans_fin()
                     # scaled = imutils.resize(image, width=200)
                     # cv2.imshow('Screen Capture', scaled)
                     cv2.waitKey(1)
