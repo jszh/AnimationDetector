@@ -59,9 +59,9 @@ did_init_trans = False
 trans_init_ts = 0
 
 def save_image():
+    global image
     image = imutils.resize(image, width=500)
     cv2.imwrite('screenshot.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 95])
-            
 
 def handle_trans_fin():
     global is_moving, did_init_trans, last_mov_ts, start_ts, imgData
@@ -88,7 +88,7 @@ while True:
                     print('wait decode finish timeout')
             print('wait time ', time.time() - start) 
             save_image()
-            s_ana.sendto(b'2', (HOST, PORT_ANALYZER))
+            s_ana.sendto(b'2', (HOST, port_remote))
             continue
         elif len(trans_init) > 0:
             print('triggered')
