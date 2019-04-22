@@ -46,7 +46,7 @@ image = None
 data = bytearray()
 leftover = bytearray()
 counter = 0
-
+flag_imdecode_finished = False
 detector = MovementDetector(should_draw=True)
 
 last_mov_ts = 0
@@ -76,7 +76,16 @@ while True:
     # listen to Analyzer
     try:
         trans_init = s_ana.recv(BUF_SIZE)
-        if len(trans_init) > 0:
+        if len(trans_init) == 1:
+            start = time.time()
+            while not flag_imdecode_finished:
+                if time.time() - start > 1:
+                    print('wait decode finish timeout')
+            print('wait time ', time.time() - start) 
+            cv2.imwrite('screenshot.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 95])
+            s_ana.sendto(b'2', (HOST, PORT_ANALYZER))
+            continue
+        elif len(trans_init) > 0:
             print('triggered')
             did_init_trans = True
             trans_init_ts = time.time()
@@ -100,7 +109,7 @@ while True:
             handle_trans_fin()
         if did_init_trans:
             trans_duration = current_time - trans_init_ts
-            if (trans_duration > 1.0 and not is_moving) or (trans_duration > 10.0 and is_moving):
+            if (trans_duration > 3.0 and not is_moving) or (trans_duration > 10.0 and is_moving):
                 print('abort', trans_duration)
                 handle_trans_fin()
 
@@ -154,8 +163,10 @@ while True:
 
             if not readingImg:    # image read finish
                 if counter % 2 == 0:
+                    flag_imdecode_finished = False
                     image = np.asarray(imgData, dtype="uint8")
                     image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+                    flag_imdecode_finished = True
                     current_time = time.time()
                     curr_is_moving, is_blank = detector.process(image, orient, timestamp/1000, top_ignore=36)
                     time_lim = 5 if is_blank else 0.5
@@ -170,9 +181,10 @@ while True:
                     else:
                         if current_time - last_mov_ts > time_lim and is_moving:
                             handle_trans_fin()
+                        # cv2.imwrite('screenshot'+str(time.time())+'.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 95])
                         if did_init_trans:
                             trans_duration = current_time - trans_init_ts
-                            if (trans_duration > 1.0 and not is_moving) or (trans_duration > 10.0 and is_moving):
+                            if (trans_duration > 3.0 and not is_moving) or (trans_duration > 10.0 and is_moving):
                                 print('abort', trans_duration)
                                 handle_trans_fin()
                     # scaled = imutils.resize(image, width=200)
