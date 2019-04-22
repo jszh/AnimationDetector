@@ -7,24 +7,30 @@ import os
 from transition import MovementDetector
 
 HOST = '127.0.0.1'
-PORT = 1313
-PORT_SERVER = 12340
-PORT_ANALYZER = 12341
 BUF_SIZE = 4096
 
 def getInt(bytes):
     return int.from_bytes(bytes, byteorder='little')
 
+device_id = '55362d1c'
+port_device = 1313
+port_local = 12340
+if len(sys.argv) == 4:
+    device_id = sys.argv[1]
+    port_device = int(sys.argv[2])
+    port_local = int(sys.argv[3])
+port_remote = port_local + 1
+
 os.system('touch screenshot.jpg')
-os.system('adb forward tcp:1313 localabstract:minicap')
+os.system('adb forward tcp:' + str(port_device) + ' localabstract:minicap')
 
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((HOST, PORT))
+    s.connect((HOST, port_device))
     s.setblocking(False)
 
     s_ana = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s_ana.bind((HOST, PORT_SERVER))
+    s_ana.bind((HOST, port_remote))
     s_ana.setblocking(False)
 except socket.error as msg:
     s.close()
@@ -60,7 +66,7 @@ def handle_trans_fin():
         try:
             cv2.imwrite('screenshot.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 95])
             # tell Analyzer about finishing after saving the screenshot
-            s_ana.sendto(b'1', (HOST, PORT_ANALYZER))
+            s_ana.sendto(b'1', (HOST, port_local))
         except Exception as e:
             print(e)
         did_init_trans = False
