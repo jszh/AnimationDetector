@@ -58,13 +58,17 @@ time_lim = 0.5
 did_init_trans = False
 trans_init_ts = 0
 
+def save_image():
+    image = imutils.resize(image, width=500)
+    cv2.imwrite('screenshot.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 95])
+            
+
 def handle_trans_fin():
     global is_moving, did_init_trans, last_mov_ts, start_ts, imgData
     is_moving = False
     if did_init_trans:
         try:
-            image = imutils.resize(image, height=500)
-            cv2.imwrite('screenshot.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 95])
+            save_image()
             # tell Analyzer about finishing after saving the screenshot
             s_ana.sendto(b'1', (HOST, port_remote))
         except Exception as e:
@@ -83,8 +87,7 @@ while True:
                 if time.time() - start > 1:
                     print('wait decode finish timeout')
             print('wait time ', time.time() - start) 
-            image = imutils.resize(image, height=500)
-            cv2.imwrite('screenshot.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 95])
+            save_image()
             s_ana.sendto(b'2', (HOST, PORT_ANALYZER))
             continue
         elif len(trans_init) > 0:
