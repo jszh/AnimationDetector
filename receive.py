@@ -31,7 +31,7 @@ try:
     s.setblocking(False)
 
     s_ana = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s_ana.bind((HOST, port_remote))
+    s_ana.bind((HOST, port_local))
     s_ana.setblocking(False)
 except socket.error as msg:
     s.close()
@@ -67,7 +67,7 @@ def handle_trans_fin():
         try:
             cv2.imwrite('screenshot.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 95])
             # tell Analyzer about finishing after saving the screenshot
-            s_ana.sendto(b'1', (HOST, port_local))
+            s_ana.sendto(b'1', (HOST, port_remote))
         except Exception as e:
             print(e)
         did_init_trans = False
