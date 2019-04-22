@@ -174,7 +174,7 @@ class MovementDetector:
             hist = self.__get_sorted_hist(gray[yc1:yc2,xc1:xc2])
             if hist[0] != 0:
                 # lower the criteria for movement
-                if hist[1]/hist[0] < 0.005:
+                if hist[3]/hist[0] < 0.005:
                     min_mov_area = 10
                     min_tot_area = 20
                 else:
