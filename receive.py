@@ -2,6 +2,7 @@ import cv2
 import imutils
 import numpy as np
 import socket
+import sys
 import time
 import os
 from transition import MovementDetector
