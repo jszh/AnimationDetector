@@ -63,6 +63,7 @@ def handle_trans_fin():
     is_moving = False
     if did_init_trans:
         try:
+            image = imutils.resize(image, height=500)
             cv2.imwrite('screenshot.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 95])
             # tell Analyzer about finishing after saving the screenshot
             s_ana.sendto(b'1', (HOST, port_remote))
@@ -82,6 +83,7 @@ while True:
                 if time.time() - start > 1:
                     print('wait decode finish timeout')
             print('wait time ', time.time() - start) 
+            image = imutils.resize(image, height=500)
             cv2.imwrite('screenshot.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 95])
             s_ana.sendto(b'2', (HOST, PORT_ANALYZER))
             continue
