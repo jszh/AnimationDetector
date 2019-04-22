@@ -13,13 +13,11 @@ BUF_SIZE = 4096
 def getInt(bytes):
     return int.from_bytes(bytes, byteorder='little')
 
-device_id = '55362d1c'
 port_device = 1313
 port_local = 12340
-if len(sys.argv) == 4:
-    device_id = sys.argv[1]
-    port_device = int(sys.argv[2])
-    port_local = int(sys.argv[3])
+if len(sys.argv) == 3:
+    port_device = int(sys.argv[1])
+    port_local = int(sys.argv[2])
 port_remote = port_local + 1
 
 os.system('touch screenshot.jpg')
