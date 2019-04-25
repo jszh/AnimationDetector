@@ -58,11 +58,11 @@ time_lim = 0.5
 did_init_trans = False
 trans_init_ts = 0
 
-def save_image():
+def save_image(path = 'screenshot.jpg'):
+    global image
     image = imutils.resize(image, width=500)
-    cv2.imwrite('screenshot.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    cv2.imwrite(path, image, [cv2.IMWRITE_JPEG_QUALITY, 95])
             
-
 def handle_trans_fin():
     global is_moving, did_init_trans, last_mov_ts, start_ts, imgData
     is_moving = False
@@ -81,23 +81,26 @@ while True:
     # listen to Analyzer
     try:
         trans_init = s_ana.recv(BUF_SIZE)
-        if len(trans_init) == 1:
-            start = time.time()
-            while not flag_imdecode_finished:
-                if time.time() - start > 1:
-                    print('wait decode finish timeout')
-            print('wait time ', time.time() - start) 
-            save_image()
-            s_ana.sendto(b'2', (HOST, PORT_ANALYZER))
-            continue
-        elif len(trans_init) > 0:
-            print('triggered')
-            did_init_trans = True
-            trans_init_ts = time.time()
-            if is_moving:
-                time_lim = max(2, time_lim)
-            elif time_lim == 2:
-                time_lim = 0.5
+        if len(trans_init) > 0:
+            ti_str = trans_init.decode()
+            if ti_str[0] == '1':
+                img_path = ti_str[1:]
+                start = time.time()
+                while not flag_imdecode_finished:
+                    if time.time() - start > 1:
+                        print('wait decode finish timeout')
+                print('wait time ', time.time() - start) 
+                save_image(img_path)
+                s_ana.sendto(b'2', (HOST, port_remote))
+                continue
+            elif ti_str == 'to_change':
+                print('triggered')
+                did_init_trans = True
+                trans_init_ts = time.time()
+                if is_moving:
+                    time_lim = max(2, time_lim)
+                elif time_lim == 2:
+                    time_lim = 0.5
     except BlockingIOError:
         pass
     except Exception as e:
